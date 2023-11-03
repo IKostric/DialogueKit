@@ -62,6 +62,16 @@ class DialogueConnector:
         """Return the dialogue history."""
         return self._dialogue_history
 
+    @property
+    def user(self):
+        """Return the user."""
+        return self._user
+
+    @property
+    def agent(self):
+        """Return the agent."""
+        return self._agent
+
     def get_platform(self) -> Platform:
         """Returns the platform."""
         return self._platform

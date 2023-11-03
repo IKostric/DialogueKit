@@ -3,10 +3,10 @@ from __future__ import annotations
 
 import logging
 from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, Type, cast
+from typing import TYPE_CHECKING, List, Type, cast
 
 from flask import Flask, Request, request
-from flask_socketio import Namespace, SocketIO
+from flask_socketio import Namespace, SocketIO, emit
 
 from dialoguekit.core import AnnotatedUtterance
 from dialoguekit.platforms.platform import Platform
@@ -101,6 +101,26 @@ class FlaskSocketPlatform(Platform):
         """
         pass
 
+    def provide_recommendations(self, user_id: str, articles: List) -> None:
+        """Provides recommendations to the user.
+
+        Args:
+            user_id: User ID.
+            articles: List of scored articles.
+        """
+        articles = [asdict(article) for article in articles]
+        self.socketio.emit("recommendations", articles, room=user_id)
+
+    def provide_bookmarks(self, user_id: str, articles: List) -> None:
+        """Provides bookmarks to the user.
+
+        Args:
+            user_id: User ID.
+            articles: List of scored articles.
+        """
+        articles = [asdict(article) for article in articles]
+        self.socketio.emit("bookmarks", articles, room=user_id)
+
 
 class ChatNamespace(Namespace):
     def __init__(self, namespace: str, platform: FlaskSocketPlatform) -> None:
@@ -142,5 +162,82 @@ class ChatNamespace(Namespace):
             data: Data received from client.
         """
         req: SocketIORequest = cast(SocketIORequest, request)
-        logger.info(f"Feedback received: {data}")
-        self._platform.feedback(req.sid, **data["feedback"])
+        logger.info(f"Utterance feedback received: {data}")
+        self._platform.feedback(req.sid, data["utterance_id"], data["feedback"])
+
+    def on_recommendation_feedback(self, data: dict) -> None:
+        """Receives feedback from client.
+
+        Args:
+            data: Data received from client.
+        """
+        req: SocketIORequest = cast(SocketIORequest, request)
+        logger.info(f"Item feedback received: {data}")
+        agent = self.get_agent(req.sid)
+        agent.handle_recommendation_feedback(data["item_id"], data["feedback"])
+
+    def on_get_bookmarks(self, data: dict) -> None:
+        """Receives bookmark request from client.
+
+        Args:
+            data: Data received from client.
+        """
+        req: SocketIORequest = cast(SocketIORequest, request)
+        agent = self._platform.get_agent(req.sid)
+        logger.info(f"Sending bookmarks: {data}")
+        emit("bookmarks", agent.get_bookmarks())
+
+    def on_bookmark_article(self, data: dict) -> None:
+        """Receives bookmark request from client.
+
+        Args:
+            data: Data received from client.
+        """
+        req: SocketIORequest = cast(SocketIORequest, request)
+        logger.info(f"Bookmark request received: {data}")
+        agent = self._platform.get_agent(req.sid)
+        agent.handle_bookmark_article(data["item_id"])
+
+    def on_remove_bookmark(self, data: dict) -> None:
+        """Receives bookmark request from client.
+
+        Args:
+            data: Data received from client.
+        """
+        req: SocketIORequest = cast(SocketIORequest, request)
+        logger.info(f"Remove bookmark request received: {data}")
+        agent = self._platform.get_agent(req.sid)
+        agent.handle_remove_bookmark(data["item_id"])
+
+    def on_get_preferences(self, data: dict) -> None:
+        """Receives preferences request from client.
+
+        Args:
+            data: Data received from client.
+        """
+        req: SocketIORequest = cast(SocketIORequest, request)
+        agent = self._platform.get_agent(req.sid)
+        logger.info(f"Sending preferences: {data}")
+        emit("preferences", agent.get_preferences())
+
+    def on_remove_preference(self, data: dict) -> None:
+        """Receives remove preference request from client.
+
+        Args:
+            data: Data received from client.
+        """
+        req: SocketIORequest = cast(SocketIORequest, request)
+        agent = self._platform.get_agent(req.sid)
+        logger.info(f"Removing preference: {data}")
+        agent.handle_remove_preference(data["topic"])
+
+    def on_set_style(self, data: dict) -> None:
+        """Receives style request from client.
+
+        Args:
+            data: Data received from client.
+        """
+        req: SocketIORequest = cast(SocketIORequest, request)
+        agent = self._platform.get_agent(req.sid)
+        logger.info(f"Setting style: {data}")
+        agent.set_style(data["style"])

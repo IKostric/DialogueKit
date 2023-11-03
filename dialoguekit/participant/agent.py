@@ -62,3 +62,16 @@ class Agent(Participant):
             NotImplementedError: If not implemented in derived class.
         """
         raise NotImplementedError
+
+    @abstractmethod
+    def handle_recommendation_feedback(self, item_id: str, value: int) -> None:
+        """Handles recommendation feedback.
+
+        Args:
+            item_id: ID of the recommended item.
+            value: Feedback value.
+
+        Raises:
+            NotImplementedError: If not implemented in derived class.
+        """
+        raise NotImplementedError
