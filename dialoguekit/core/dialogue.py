@@ -1,4 +1,5 @@
 """Interface representing the sequence of utterances in a dialogue."""
+
 from __future__ import annotations
 
 import calendar
@@ -104,9 +105,11 @@ class Dialogue:
         if utterance.utterance_id is None:
             utterance.utterance_id = "{}_{}_{}".format(
                 self.conversation_id,
-                self.agent_id
-                if utterance.participant is DialogueParticipant.AGENT
-                else self.user_id,
+                (
+                    self.agent_id
+                    if utterance.participant is DialogueParticipant.AGENT
+                    else self.user_id
+                ),
                 self.current_turn_id,
             )
         self._utterances.append(utterance)

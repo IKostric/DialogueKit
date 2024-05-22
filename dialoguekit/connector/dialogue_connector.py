@@ -28,7 +28,7 @@ from dialoguekit.participant.user import User
 if TYPE_CHECKING:
     from dialoguekit.platforms.platform import Platform
 
-_DIALOGUE_EXPORT_PATH = "dialogue_export"
+_DIALOGUE_EXPORT_PATH = "export/dialogue"
 
 
 class DialogueConnector:
