@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import json
 import os
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional
 
 from dialoguekit.core.annotated_utterance import AnnotatedUtterance
 from dialoguekit.core.dialogue import Dialogue
@@ -32,13 +32,15 @@ _DIALOGUE_EXPORT_PATH = "dialogue_export"
 
 
 class DialogueConnector:
+
     def __init__(
         self,
         agent: Agent,
         user: User,
         platform: Platform,
-        conversation_id: str = None,
+        conversation_id: Optional[str] = None,
         save_dialogue_history: bool = True,
+        **kwargs,
     ) -> None:
         """Represents a dialogue connector.
 
@@ -49,6 +51,7 @@ class DialogueConnector:
             conversation_id: Conversation ID. Defaults to None.
             save_dialogue_history: Flag to save the dialogue or not.
         """
+        super().__init__(**kwargs)
         self._platform = platform
         self._agent = agent
         self._agent.connect_dialogue_connector(self)
@@ -61,6 +64,16 @@ class DialogueConnector:
     def dialogue_history(self):
         """Return the dialogue history."""
         return self._dialogue_history
+
+    @property
+    def user(self):
+        """Return the user."""
+        return self._user
+
+    @property
+    def agent(self):
+        """Return the agent."""
+        return self._agent
 
     def get_platform(self) -> Platform:
         """Returns the platform."""
@@ -88,7 +101,7 @@ class DialogueConnector:
         self._agent.receive_utterance(annotated_utterance)
 
     def register_agent_utterance(
-        self, annotated_utterance: AnnotatedUtterance
+        self, annotated_utterances: List[AnnotatedUtterance]
     ) -> None:
         """Registers an annotated utterance from the agent.
 
@@ -105,16 +118,18 @@ class DialogueConnector:
         Args:
             annotated_utterance: Agent utterance.
         """
-        self._dialogue_history.add_utterance(annotated_utterance)
-        self._platform.display_agent_utterance(
-            self._user.id, annotated_utterance
-        )
-        # TODO: Replace with appropriate intent (make sure all intent schemes
-        # have an EXIT intent.)
-        if annotated_utterance.intent == self._agent.stop_intent:
-            self.close()
-        else:
-            self._user.receive_utterance(annotated_utterance)
+        end = False
+        for utterance in annotated_utterances:
+            self._dialogue_history.add_utterance(utterance)
+            self._platform.display_agent_utterance(self._user.id, utterance)
+            # TODO: Replace with appropriate intent (make sure all intent schemes
+            # have an EXIT intent.)
+            if utterance.intent == self._agent.stop_intent:
+                end = True
+
+        if not end:
+            print("Sending to user")
+            self._user.receive_utterances(annotated_utterances)
 
     def register_user_feedback(
         self, feedback: BinaryFeedback, utterance_id: str

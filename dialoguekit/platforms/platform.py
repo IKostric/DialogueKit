@@ -1,6 +1,7 @@
 """The Platform facilitates displaying of the conversation."""
+
 from abc import ABC, abstractmethod
-from typing import Dict, Type
+from typing import Any, Dict, Optional, Type
 
 from dialoguekit.connector import DialogueConnector
 from dialoguekit.core import Utterance
@@ -17,7 +18,7 @@ class Platform(ABC):
         if not issubclass(agent_class, Agent):
             raise ValueError("agent_class must be a subclass of Agent")
         self._agent_class = agent_class
-        self._active_users: Dict[str, User] = {}
+        self._active_connections: Dict[str, DialogueConnector] = {}
 
     @abstractmethod
     def start(self) -> None:
@@ -58,24 +59,18 @@ class Platform(ABC):
         """
         raise NotImplementedError
 
-    def get_new_agent(self) -> Agent:
-        """Returns a new instance of the agent.
-
-        Returns:
-            Agent.
-        """
-        return self._agent_class(self._agent_class.__name__)
-
-    def get_user(self, user_id: str) -> User:
-        """Returns the user.
+    def get_dialogue_connector(
+        self, user_id: str
+    ) -> Optional[DialogueConnector]:
+        """Returns the dialogue connector.
 
         Args:
             user_id: User ID.
 
         Returns:
-            User.
+            DialogueConnector.
         """
-        return self._active_users.get(user_id)
+        return self._active_connections.get(user_id)
 
     def connect(self, user_id: str) -> None:
         """Connects a user to an agent.
@@ -83,13 +78,12 @@ class Platform(ABC):
         Args:
             user_id: User ID.
         """
-        self._active_users[user_id] = User(user_id)
-        dialogue_connector = DialogueConnector(
-            agent=self.get_new_agent(),
-            user=self._active_users[user_id],
+        user = User(user_id)
+        self._active_connections[user_id] = DialogueConnector(
+            agent=self.get_new_agent(user_id),
+            user=user,
             platform=self,
         )
-        dialogue_connector.start()
 
     def disconnect(self, user_id: str) -> None:
         """Disconnects a user from an agent.
@@ -97,25 +91,28 @@ class Platform(ABC):
         Args:
             user_id: User ID.
         """
-        user = self._active_users.pop(user_id)
-        user.dialogue_connector.close()
+        dialogue_connector = self._active_connections.pop(user_id)
+        dialogue_connector.close()
 
-    def message(self, user_id: str, text: str) -> None:
+    def message(
+        self, user_id: str, message: str, metadata: Dict[str, Any]
+    ) -> None:
         """Gets called every time there is a new user input.
 
         Args:
             user_id: User ID.
             text: User input.
         """
-        self.get_user(user_id).handle_input(text)
+        self.get_user(user_id).handle_input(message, metadata)
 
     def feedback(self, user_id: str, utterance_id: str, value: int) -> None:
-        """Gets called every time there is a new utterance feedback.
+        """Gets called every time there is a new feedback.
 
         Args:
             user_id: User ID.
             utterance_id: Utterance ID.
             value: Feedback value.
         """
-        # Issue: https://github.com/iai-group/DialogueKit/issues/219
-        pass
+        self.get_dialogue_connector(user_id).handle_feedback(
+            utterance_id, value
+        )

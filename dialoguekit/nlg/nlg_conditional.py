@@ -13,11 +13,14 @@ from dialoguekit.participant.participant import DialogueParticipant
 
 
 class ConditionalNLG(TemplateNLG):
+
     def __init__(
-        self, response_templates: Dict[Intent, List[AnnotatedUtterance]]
+        self,
+        response_templates: Dict[Intent, List[AnnotatedUtterance]],
+        **kwargs,
     ) -> None:
         """Template-based NLG with support for conditional."""
-        super().__init__(response_templates=response_templates)
+        super().__init__(response_templates=response_templates, **kwargs)
 
     def generate_utterance_text(
         self,
@@ -146,7 +149,15 @@ class ConditionalNLG(TemplateNLG):
         )
         # Check if filtering has filtered out everything
         if len(templates) == 0:
-            raise ValueError("NLG text generation failed.")
+            annotation_summary = (
+                ", ".join([annotation.slot for annotation in annotations])
+                or "None"
+            )
+            raise ValueError(
+                "NLG text generation failed.\nNo templates found "
+                f"for the {intent} intent and annotations: "
+                f"{annotation_summary}"
+            )
 
         if conditional is not None:
             response_utterance = self._select_closest_to_conditional(

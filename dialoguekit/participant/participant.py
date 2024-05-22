@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Dict, Optional
 
 if TYPE_CHECKING:
     from dialoguekit.connector.dialogue_connector import DialogueConnector
@@ -18,7 +18,8 @@ class DialogueParticipant(Enum):
 
 
 class Participant(ABC):
-    def __init__(self, id: str, type: DialogueParticipant) -> None:
+
+    def __init__(self, id: str, type: DialogueParticipant, **kwargs) -> None:
         """Represents a participant.
 
         Both agents and users are participants.
@@ -29,7 +30,9 @@ class Participant(ABC):
         """
         self._id = id
         self._type = type
-        self._dialogue_connector: DialogueConnector = None
+        super().__init__(**kwargs)
+
+        self._dialogue_connector: Optional[DialogueConnector] = None
 
     @property
     def id(self):
@@ -37,7 +40,7 @@ class Participant(ABC):
         return self._id
 
     @property
-    def dialogue_connector(self) -> DialogueConnector:
+    def dialogue_connector(self) -> Optional[DialogueConnector]:
         """Returns the DialogueConnector instance for the participant.
 
         Returns:
@@ -74,3 +77,24 @@ class Participant(ABC):
             NotImplementedError: If not implemented in derived class.
         """
         raise NotImplementedError
+
+    @classmethod
+    def get_name(cls) -> str:
+        """Returns the name of the participant.
+
+        Returns:
+            The name of the participant.
+        """
+        return cls.__name__
+
+    @classmethod
+    def get_instance(cls, **kwargs) -> Participant:
+        """Returns an instance of the participant.
+
+        Args:
+            kwargs: Keyword arguments.
+
+        Returns:
+            An instance of the participant.
+        """
+        return cls(**kwargs)
