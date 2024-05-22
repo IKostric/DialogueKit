@@ -10,10 +10,12 @@ from dialoguekit.nlu.slot_annotator import SlotAnnotator
 
 
 class NLU:
+
     def __init__(
         self,
         intent_classifier: IntentClassifier,
         slot_annotators: List[SlotAnnotator],
+        **kwargs,
     ) -> None:
         """Represents a Natural Language Understanding (NLU) component.
 
@@ -21,6 +23,7 @@ class NLU:
             intent_classifier: Intent classifier.
             slot_annotators: List of slot annotators.
         """
+        super().__init__(**kwargs)
         self._intent_classifier = intent_classifier
         self._slot_annotators = slot_annotators
 

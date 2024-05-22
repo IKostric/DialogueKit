@@ -1,6 +1,7 @@
 """The Platform facilitates displaying of the conversation."""
+
 from abc import ABC, abstractmethod
-from typing import Dict, Type
+from typing import Any, Dict, Optional, Type
 
 from dialoguekit.connector import DialogueConnector
 from dialoguekit.core import Utterance
@@ -58,37 +59,9 @@ class Platform(ABC):
         """
         raise NotImplementedError
 
-    def get_new_agent(self, user_id: str) -> Agent:
-        """Returns a new instance of the agent.
-
-        Returns:
-            Agent.
-        """
-        return self._agent_class(self._agent_class.__name__, user_id)
-
-    def get_user(self, user_id: str) -> User:
-        """Returns the user.
-
-        Args:
-            user_id: User ID.
-
-        Returns:
-            User.
-        """
-        return self._active_connections.get(user_id).user
-
-    def get_agent(self, user_id: str) -> Agent:
-        """Returns the agent.
-
-        Args:
-            user_id: User ID.
-
-        Returns:
-            Agent.
-        """
-        return self._active_connections.get(user_id).agent
-
-    def get_dialogue_connector(self, user_id: str) -> DialogueConnector:
+    def get_dialogue_connector(
+        self, user_id: str
+    ) -> Optional[DialogueConnector]:
         """Returns the dialogue connector.
 
         Args:
@@ -111,7 +84,6 @@ class Platform(ABC):
             user=user,
             platform=self,
         )
-        self._active_connections[user_id].start()
 
     def disconnect(self, user_id: str) -> None:
         """Disconnects a user from an agent.
@@ -122,14 +94,16 @@ class Platform(ABC):
         dialogue_connector = self._active_connections.pop(user_id)
         dialogue_connector.close()
 
-    def message(self, user_id: str, text: str) -> None:
+    def message(
+        self, user_id: str, message: str, metadata: Dict[str, Any]
+    ) -> None:
         """Gets called every time there is a new user input.
 
         Args:
             user_id: User ID.
             text: User input.
         """
-        self.get_user(user_id).handle_input(text)
+        self.get_user(user_id).handle_input(message, metadata)
 
     def feedback(self, user_id: str, utterance_id: str, value: int) -> None:
         """Gets called every time there is a new feedback.

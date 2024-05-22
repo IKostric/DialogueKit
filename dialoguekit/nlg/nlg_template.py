@@ -2,6 +2,7 @@
 import json
 import random
 import sys
+from collections import defaultdict
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Union
 
@@ -13,8 +14,11 @@ from dialoguekit.participant.participant import DialogueParticipant
 
 
 class TemplateNLG(AbstractNLG):
+
     def __init__(
-        self, response_templates: Dict[Intent, List[AnnotatedUtterance]]
+        self,
+        response_templates: Dict[Intent, List[AnnotatedUtterance]],
+        **kwargs,
     ) -> None:
         """Template-based NLG.
 
@@ -24,6 +28,7 @@ class TemplateNLG(AbstractNLG):
         Args:
             response_templates: Response templates for NLG.
         """
+        super().__init__(**kwargs)
         self._response_templates = response_templates
 
     def generate_utterance_text(
@@ -148,7 +153,7 @@ class TemplateNLG(AbstractNLG):
             List of annotated utterances that are possible to create with the
             provided annotations.
         """
-        filtered_annotated_utterances = []
+        filtered_annotated_utterances_dict = defaultdict(list)
         annotations_slots = set([annotation.slot for annotation in annotations])
         for annotated_utterance in templates:
             utterance_slots = set(
@@ -157,8 +162,17 @@ class TemplateNLG(AbstractNLG):
                     for annotation in annotated_utterance.annotations
                 ]
             )
-            if all(x in annotations_slots for x in utterance_slots):
-                filtered_annotated_utterances.append(annotated_utterance)
+            number_of_annotations = len(
+                utterance_slots.intersection(annotations_slots)
+            )
+            if number_of_annotations == len(utterance_slots):
+                filtered_annotated_utterances_dict[
+                    number_of_annotations
+                ].append(annotated_utterance)
+        max_key = max(filtered_annotated_utterances_dict.keys())
+        filtered_annotated_utterances = filtered_annotated_utterances_dict[
+            max_key
+        ]
         if force_annotation and len(annotations) > 0:
             filtered_annotated_utterances = [
                 template

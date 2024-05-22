@@ -2,28 +2,20 @@
 
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from dialoguekit.core.annotated_utterance import AnnotatedUtterance
 from dialoguekit.core.annotation import Annotation
+from dialoguekit.core.intent import Intent
+from dialoguekit.dialogue_manager.dialogue_state import DialogueState
 from dialoguekit.participant.participant import DialogueParticipant
 
 
-@dataclass
-class DialogueState:
-    """A class to represent the state of a dialogue."""
-
-    history: List[AnnotatedUtterance] = field(default_factory=list)
-    last_user_intent: str = None
-    slots: Dict[str, List[Annotation]] = field(
-        default_factory=lambda: defaultdict(list)
-    )
-    turn_count: int = 0
-
-
 class DialogueStateTracker:
-    def __init__(self) -> None:
+
+    def __init__(self, **kwargs) -> None:
         """Initializes the dialogue state tracker."""
+        super().__init__(**kwargs)
         self._dialogue_state = DialogueState()
 
     def get_state(self) -> DialogueState:
