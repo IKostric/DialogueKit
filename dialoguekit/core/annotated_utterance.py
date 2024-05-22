@@ -1,7 +1,7 @@
 """Interface extending utterances with annotations."""
 
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from dialoguekit.core.annotation import Annotation
 from dialoguekit.core.intent import Intent
@@ -17,7 +17,7 @@ class AnnotatedUtterance(Utterance):
     Annotations.
     """
 
-    intent: Intent = field(default=None, hash=True)
+    intent: Optional[Intent] = field(default=None, hash=True)
     annotations: List[Annotation] = field(
         default_factory=list, compare=True, hash=False
     )

@@ -1,10 +1,11 @@
 """The Platform facilitates displaying of the conversation."""
+
 from __future__ import annotations
 
 import json
 import logging
 from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, List, Optional, Type, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, cast
 
 from flask import Flask, Request, request
 from flask_socketio import Namespace, SocketIO, emit
@@ -20,6 +21,16 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 _STUDY_PATH = "export/study.json"
+
+
+def load_study_data():
+    with open(_STUDY_PATH) as f:
+        return json.load(f)
+
+
+def save_study_data(data: Dict[str, Any]):
+    with open(_STUDY_PATH, "w") as f:
+        json.dump(data, f)
 
 
 class SocketIORequest(Request):
@@ -149,7 +160,7 @@ class FlaskSocketPlatform(Platform):
             )
         else:
             emit(
-                "init", {},
+                "init",
             )
 
 

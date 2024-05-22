@@ -4,10 +4,11 @@ For communicating with an agent, the specific user instance needs to be
 connected with a DialogueConnector by invoking
 `register_dialogue_connector()`.
 """
+
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from dialoguekit.core.annotated_utterance import AnnotatedUtterance
 from dialoguekit.participant.participant import DialogueParticipant, Participant
@@ -24,23 +25,29 @@ class UserType(Enum):
 
 
 class User(Participant):
-    def __init__(self, id: str, user_type: UserType = UserType.HUMAN) -> None:
+
+    def __init__(
+        self, id: str, user_type: UserType = UserType.HUMAN, **kwargs
+    ) -> None:
         """Represents a user.
 
         Args:
             id: User ID.
             user_type: User type (default: HUMAN).
         """
-        super().__init__(id=id, type=DialogueParticipant.USER)
         self._user_type = user_type
-        self._ready_for_input = False
+        super().__init__(id=id, type=DialogueParticipant.USER, **kwargs)
+
+        self._ready_for_input: bool = False
 
     @property
     def ready_for_input(self) -> bool:
         """Returns whether the user is ready to listen for input."""
         return self._ready_for_input
 
-    def handle_input(self, text: str) -> None:
+    def handle_input(
+        self, text: str, metadata: Optional[Dict[str, Any]] = None
+    ) -> None:
         """Gets called every time there is a new user input.
 
         Args:
@@ -49,7 +56,9 @@ class User(Participant):
         if self._ready_for_input:
             self._ready_for_input = False
             utterance = AnnotatedUtterance(
-                text, participant=DialogueParticipant.USER
+                text,
+                participant=DialogueParticipant.USER,
+                metadata=metadata or {},
             )
             self._dialogue_connector.register_user_utterance(utterance)
 

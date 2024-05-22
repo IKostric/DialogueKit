@@ -23,11 +23,13 @@ class AgentType(Enum):
 
 
 class Agent(Participant):
+
     def __init__(
         self,
         id: str,
         agent_type: AgentType = AgentType.BOT,
         stop_intent: Intent = Intent("EXIT"),
+        **kwargs,
     ) -> None:
         """Represents an agent.
 
@@ -36,7 +38,7 @@ class Agent(Participant):
             agent_type: Agent type (default: BOT).
             stop_intent: Label of the exit intent. Defaults to "EXIT".
         """
-        super().__init__(id=id, type=DialogueParticipant.AGENT)
+        super().__init__(id=id, type=DialogueParticipant.AGENT, **kwargs)
         self._agent_type = agent_type
         self._stop_intent = stop_intent
 

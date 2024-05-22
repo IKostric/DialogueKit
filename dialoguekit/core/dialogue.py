@@ -1,10 +1,11 @@
 """Interface representing the sequence of utterances in a dialogue."""
+
 from __future__ import annotations
 
 import calendar
 import datetime
 from dataclasses import asdict, is_dataclass
-from typing import TYPE_CHECKING, Any, Dict, List, Text
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Text
 
 from dialoguekit.core.annotated_utterance import AnnotatedUtterance
 from dialoguekit.core.feedback import UtteranceFeedback
@@ -15,8 +16,9 @@ if TYPE_CHECKING:
 
 
 class Dialogue:
+
     def __init__(
-        self, agent_id: str, user_id: str, conversation_id: str = None
+        self, agent_id: str, user_id: str, conversation_id: Optional[str] = None
     ) -> None:
         """Represents a dialogue.
 
@@ -103,9 +105,11 @@ class Dialogue:
         if utterance.utterance_id is None:
             utterance.utterance_id = "{}_{}_{}".format(
                 self.conversation_id,
-                self.agent_id
-                if utterance.participant is DialogueParticipant.AGENT
-                else self.user_id,
+                (
+                    self.agent_id
+                    if utterance.participant is DialogueParticipant.AGENT
+                    else self.user_id
+                ),
                 self.current_turn_id,
             )
         self._utterances.append(utterance)
