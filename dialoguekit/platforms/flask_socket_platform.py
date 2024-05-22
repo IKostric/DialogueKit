@@ -1,9 +1,10 @@
 """The Platform facilitates displaying of the conversation."""
 from __future__ import annotations
 
+import json
 import logging
 from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, List, Type, cast
+from typing import TYPE_CHECKING, List, Optional, Type, cast
 
 from flask import Flask, Request, request
 from flask_socketio import Namespace, SocketIO, emit
@@ -18,6 +19,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+_STUDY_PATH = "export/study.json"
+
 
 class SocketIORequest(Request):
     """A request that contains a sid attribute."""
@@ -28,7 +31,7 @@ class SocketIORequest(Request):
 @dataclass
 class Message:
     text: str
-    intent: str = None
+    intent: Optional[str] = None
 
     @classmethod
     def from_utterance(self, utterance: Utterance) -> Message:
@@ -62,16 +65,18 @@ class FlaskSocketPlatform(Platform):
         super().__init__(agent_class)
         self.app = Flask(__name__)
         self.socketio = SocketIO(self.app, cors_allowed_origins="*")
+        self.socketio.on_namespace(ChatNamespace("/", self))
 
-    def start(self, host: str = "127.0.0.1", port: str = "5000") -> None:
+    def start(
+        self, host: str = "127.0.0.1", port: int = 5000, debug: bool = False
+    ) -> None:
         """Starts the platform.
 
         Args:
             host: Hostname.
             port: Port.
         """
-        self.socketio.on_namespace(ChatNamespace("/", self))
-        self.socketio.run(self.app, host=host, port=port)
+        self.socketio.run(self.app, host=host, port=port, debug=debug)
 
     def display_agent_utterance(
         self, user_id: str, utterance: Utterance
@@ -121,6 +126,32 @@ class FlaskSocketPlatform(Platform):
         articles = [asdict(article) for article in articles]
         self.socketio.emit("bookmarks", articles, room=user_id)
 
+    def initialize(
+        self, user_id: str, mode: Optional[str], token: Optional[str]
+    ) -> None:
+        """Initializes the client.
+
+        Args:
+            user_id: User ID.
+            style: Style.
+        """
+        if mode == "study":
+            # TODO: Find the current stage of the study and
+            # emit initialization appropriately.
+            emit(
+                "init",
+                {"style": {"name": "considerate", "showStyleSwitch": False}},
+            )
+        elif mode == "style":
+            emit(
+                "init",
+                {"style": {"name": "considerate", "showStyleSwitch": True}},
+            )
+        else:
+            emit(
+                "init", {},
+            )
+
 
 class ChatNamespace(Namespace):
     def __init__(self, namespace: str, platform: FlaskSocketPlatform) -> None:
@@ -137,6 +168,9 @@ class ChatNamespace(Namespace):
         """Connects client to platform."""
         req: SocketIORequest = cast(SocketIORequest, request)
         self._platform.connect(req.sid)
+        mode = request.args.get("mode")
+        token = request.args.get("token")
+        self._platform.initialize(req.sid, mode, token)
         logger.info(f"Client connected; user_id: {req.sid}")
 
     def on_disconnect(self) -> None:
@@ -144,6 +178,19 @@ class ChatNamespace(Namespace):
         req: SocketIORequest = cast(SocketIORequest, request)
         self._platform.disconnect(req.sid)
         logger.info(f"Client disconnected; user_id: {req.sid}")
+
+    def on_start_conversation(self, data: dict) -> None:
+        """Starts conversation.
+
+        Args:
+            data: Data received from client.
+        """
+        req: SocketIORequest = cast(SocketIORequest, request)
+        # self._active_connections[req.sid].start()
+        dc = self._platform.get_dialogue_connector(req.sid)
+        if dc:
+            dc.start()
+        logger.info(f"Conversation started: {data}")
 
     def on_message(self, data: dict) -> None:
         """Receives message from client and sends response.

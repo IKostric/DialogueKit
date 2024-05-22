@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import calendar
 import datetime
+from dataclasses import asdict, is_dataclass
 from typing import TYPE_CHECKING, Any, Dict, List, Text
 
 from dialoguekit.core.annotated_utterance import AnnotatedUtterance
@@ -150,10 +151,15 @@ class Dialogue:
 
             if isinstance(utterance, AnnotatedUtterance):
                 if utterance.intent is not None:
-                    utterance_info["intent"] = utterance.intent.label
+                    utterance_info["intent"] = str(utterance.intent)
 
                 for k, v in utterance.metadata.items():
-                    utterance_info[k] = v
+                    if isinstance(v, list):
+                        utterance_info[k] = [
+                            asdict(el) if is_dataclass(el) else el for el in v
+                        ]
+                    else:
+                        utterance_info[k] = asdict(v) if is_dataclass(v) else v
 
                 annotations = utterance.annotations
                 if annotations:

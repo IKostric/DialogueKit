@@ -1,6 +1,6 @@
 """NLU level init."""
 from dialoguekit.nlu.intent_classifier import IntentClassifier
-from dialoguekit.nlu.models.diet_classifier_rasa import IntentClassifierRasa
+# from dialoguekit.nlu.models.diet_classifier_rasa import IntentClassifierRasa
 from dialoguekit.nlu.models.intent_classifier_cosine import (
     IntentClassifierCosine,
 )
@@ -13,7 +13,7 @@ from dialoguekit.nlu.slot_annotator_dict import SlotAnnotatorDict
 
 __all__ = [
     "IntentClassifier",
-    "IntentClassifierRasa",
+    # "IntentClassifierRasa",
     "IntentClassifierCosine",
     "SatisfactionClassifier",
     "SatisfactionClassifierSVM",

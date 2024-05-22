@@ -111,7 +111,7 @@ class Platform(ABC):
             user=user,
             platform=self,
         )
-        self._active_connections[user_id].start()
+        # self._active_connections[user_id].start()
 
     def disconnect(self, user_id: str) -> None:
         """Disconnects a user from an agent.
